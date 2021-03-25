@@ -1,7 +1,6 @@
-# Makefile for libbmp.a
+# Makefile για τις βιβλιοθήκες k08.a και libbmp.a
 
-# we find which operating system is used
-
+# Βρίσκουμε ποιο λειτουργικό σύστημα χρησιμοποιείται
 ifeq ($(OS),Windows_NT)
 	SUFFIX = win
 else ifeq ($(shell uname -s),Linux)
@@ -11,7 +10,6 @@ else
 endif
 
 all: libbmp.a
-
 
 # Το ίδιο για το libbmp.a
 libbmp.a:
