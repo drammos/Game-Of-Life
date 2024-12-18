@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
                 return ERROR;
         }        
         state = life_create_from_rle(argv[1]);
-        
         // <state> <top> <left> <bottom> <right> <frames> <zoom> <speed> <delay> <gif>  //pros diagrafi
 
         //οι διαστασεις του gif
@@ -35,13 +34,9 @@ int main(int argc, char *argv[]) {
         //το ζουμ για τα κελια
         float zoom = atof( argv[7]);
         float cellsize=0;
-         if(zoom > 1){
-        //         bottom = bottom*zoom;
-        //         right = right*zoom;
-        //         left = left*zoom;
-        //         top = top*zoom;
-                 cellsize = zoom;
-         }
+        if(zoom > 1){
+                cellsize = zoom;
+        }
 
         //ο χρόνος που διαρκεί κάθε frame (msecs).
         int delay = atoi( argv[9]);
@@ -83,14 +78,15 @@ int main(int argc, char *argv[]) {
 
         LifeCell cell;
         
-        int x = 0;   //, previous_x = 0;
-        int y = 0;   //, previous_y = 0;
+        int x = 0;
+        int y = 0;
 
         int developments;
         int counter;
         counter = 1;
         developments = 1;
         int k = 1;
+
 	// Δημιουργούμε ενα animation με ένα "cell" το οποίο μετακινείται από τη δεξιά-πάνω
 	// γωνία προς την κάτω-αριστερά. Το cell μετακινείται ένα pixel τη φορά, οπότε το animation
 	// θα έχει τόσα frames όσα το μέθεθος της εικόνας.
@@ -161,10 +157,10 @@ int main(int argc, char *argv[]) {
                else if(developments>steps)gif_add_frame(gif,bitmap);
         }
 
-	// Αποθήκευση σε αρχείο
+	// save in gif file
 	gif_save(gif, argv[10]);
 
-	// Αποδέσμευση μνήμης
+	// free memory
 	bm_free(bitmap);
 	gif_free(gif);
         //free(gif_for_save);
