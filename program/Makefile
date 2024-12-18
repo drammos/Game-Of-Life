@@ -15,21 +15,21 @@ OBJS = lifegame.o $(MODULES)/LifeState.o $(MODULES)/ADTVector.o $(MODULES)/ADTMa
 EXEC = lifegame
 
 # parameters
-ARGS =
+ARGS = test1.rle 0 0 200 200 500 1 1 10 output.gif
 
 # το ίδιο για το libbmp.a
 $(LIB)/libbmp.a:
 	$(MAKE) -C $(LIB) libbmp.a
 
 $(EXEC): $(OBJS) $(INCL)
-	gcc $(OBJS) -o $(EXEC)
+	gcc $(OBJS) -o $(EXEC) -lm
 
 clean:
 	rm -f $(OBJS) $(EXEC)
 
 run: $(EXEC)
-	./$(EXEC) $(ARGS) FILE.rle
+	./$(EXEC) $(ARGS)
 
 gdb: $(OBJS)
-	gcc $(OBJS) -g3 -o $(EXEC)
+	gcc $(OBJS) -g3 -o $(EXEC) -lm
 	gdb $(EXEC)
