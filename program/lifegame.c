@@ -68,6 +68,8 @@ int main(int argc, char *argv[]) {
         else{
                 size_m = left - right;
         }
+        int i_dis = abs(top-bottom)/4;
+        int j_dis = abs(right-left)/4;
 
         // Δημιουργία ενός GIF και ενός bitmap στη μνήμη
 	GIF* gif = gif_create( size*zoom, size_m*zoom);
@@ -103,16 +105,8 @@ int main(int argc, char *argv[]) {
                      node_map != MAP_EOF; 
                      node_map = map_next( state_new->map, node_map))
                 {       
-                        //  bm_dithrect(Bitmap *b, int x0, int y0, int x1, int y1);
                         cell = map_node_key( state_new->map, node_map);
-                        // if( top >= 0){
-                        //          x = cell->y*zoom + top;
-                        // }
-                        // else{
-                        //          x = cell->y*zoom - top;
-                        // }
-                        // if
-                        //fprintf(stderr,"ok %d kai  %d \n", cell->x, cell->y);
+                        
                         if(top<0){
                                 y = cell->x*zoom - top; 
                         }
@@ -129,6 +123,8 @@ int main(int argc, char *argv[]) {
                                 if(top>0)y = y - top;
                                 if(left>0)x = x - left;
                                 k = 1;
+                                x = x+ i_dis;
+                                y = y + j_dis;
                                 bm_fillrect(bitmap, x, y, x + cellsize , y + cellsize);
                         }
                         //bm_fillrect(bitmap, x, y,x+1 , y+1);
