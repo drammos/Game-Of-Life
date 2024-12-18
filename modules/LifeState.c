@@ -5,14 +5,14 @@
 
 #include "LifeState.h"
 #include "ADTMap.h"
-
+#include <stdint.h>
 #include "bmp.h"
 #include "gif.h"
 
 
 //With Create Fuction, I reserve space
 
-//create int
+// Create int
 int *create_int(int value)
 {
     int *p = malloc(sizeof(int));
@@ -20,7 +20,7 @@ int *create_int(int value)
     return p;
 }
 
-//create char
+// Create char
 char *create_char(char value)
 {
     char *p = malloc(sizeof(char));
@@ -28,7 +28,7 @@ char *create_char(char value)
     return p;
 }
 
-//create lifecell
+// Create lifecell
 LifeCell create_lifecell(LifeCell cell)
 {
     LifeCell cell_1 = malloc(sizeof(struct lifecell));
@@ -37,7 +37,7 @@ LifeCell create_lifecell(LifeCell cell)
     return cell_1;
 }
 
-//create state
+// Create state
 LifeState create_state(LifeState state)
 {
     LifeState state_new = life_create();
@@ -57,7 +57,17 @@ LifeState create_state(LifeState state)
     return state_new;
 }
 
-//compare fuction
+// Hashing for lifecell
+uint32_t hash_lifecell(Pointer cell) {
+    LifeCell c = (LifeCell)cell;
+
+    uint32_t hash = 0;
+    hash = c->x * 73856093u ^ c->y * 19349663u;
+
+    return hash;
+}
+
+// Compare fuction
 int compare_state(Pointer a, Pointer b)
 {
     LifeState state_1 = a;
@@ -97,51 +107,47 @@ int compare_state(Pointer a, Pointer b)
     return 0;
 }
 
-//compare int
+// Compare int
 int compare_int(Pointer a, Pointer b)
 {
     return *(int *)a - *(int *)b;
 }
 
-//compare lifecell
+// Compare lifecell
 int compare_lifecell(Pointer a, Pointer b)
 {
-    LifeCell c1 = a;
-    LifeCell c2 = b;
-    if (c1->x != c2->x)
-    {
-        return c1->x - c2->x;
-    }
-    if ((c1->y) != (c2->y))
-    {
+    LifeCell c1 = (LifeCell)a;
+    LifeCell c2 = (LifeCell)b;
+    if (c1->x==c2->x) {
         return c1->y - c2->y;
     }
-    return 0;
+
+    return c1->x - c2->x;
 }
 
-//life create
+// Life create
 LifeState life_create()
 {
     LifeState state;
     state = malloc(sizeof(struct lifestate));
     state->map = map_create(compare_lifecell, free, free);
+    map_set_hash_function(state->map, hash_lifecell);
     state->mincell = malloc(sizeof(struct lifecell));
     state->maxcell = malloc(sizeof(struct lifecell));
     return state;
 }
 
-//life create from file, where give for input
-//save the cell in life, in a map
+// I create Life create from rle-file(input)
+//save the life-cell, in a map
 LifeState life_create_from_rle(char *file)
 {
     LifeState state = life_create();
+
     if (strcmp(file, "-") == 0)
     {
         exit(0);
     }
-
     FILE *filename = fopen(file, "r");
-    
     char character;
     character = fgetc(filename);
     
@@ -418,7 +424,7 @@ void life_save_to_rle(LifeState state, char *file)
     fclose(filename);
 }
 
-//get cell
+// Get cell
 bool life_get_cell(LifeState state, LifeCell cell)
 {   
     //i check if the cell is in the map( where mains cell in life), otherwise is dead 
@@ -429,8 +435,9 @@ bool life_get_cell(LifeState state, LifeCell cell)
     return false;
 }
 
-//set cell
-//if value = true i change the cell from dead->life, otherwise this cell is dead
+// Set cell
+// If value = true i change the cell from dead->life 
+// Otherwise this cell is dead
 void life_set_cell(LifeState state, LifeCell cell, bool value)
 {   
     if (life_get_cell(state, cell) == 1)
@@ -451,12 +458,16 @@ void life_set_cell(LifeState state, LifeCell cell, bool value)
 
 LifeState life_evolve(LifeState state)
 {
-    LifeState state_1;
-    state_1 = life_create();       //δημιουργω ενα καινουριο state οπου στο map του θα αποθηκευω ποσους ζωντανους γειτονες εχει ο καθε
-    int min_i = state->mincell->x; //γειτονας του
-    int min_j = state->mincell->y; //το key του θα χει cell και το value ποσους ζωντανους γειτονες εχει
+    // I create a new state
+    // The new map includes for Key the lifecells 
+    // And the neighbours for Value
+    LifeState state_neighbours;
+    state_neighbours = life_create();
+    int min_i = state->mincell->x;
+    int min_j = state->mincell->y;
     int max_i = state->maxcell->x;
     int max_j = state->maxcell->y;
+
     int neighbours;
     neighbours = 0;
     LifeCell cell_n;
@@ -467,72 +478,102 @@ LifeState life_evolve(LifeState state)
         {
             cell_n->x = i;
             cell_n->y = j;
-            map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+            map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
         }
     }
     LifeCell cell;
     cell = malloc(sizeof(struct lifecell));
-    // printf("\n\n %d \n\n", map_size(state->map));
     for (MapNode node = map_first(state->map);
          node != MAP_EOF;
          node = map_next(state->map, node))
     {
-        //αθροιζω το neighbous στο δεξι και αριστερο κελι( του state_1) απο το κελι που βρισκομαι στο state
+        //Add new neighbours for left&right cells (new_state) from the state
         cell = map_node_key(state->map, node);
-
+        Pointer* pointer;
         cell_n->x = cell->x;
         cell_n->y = cell->y - 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
         cell_n->x = cell->x;
         cell_n->y = cell->y + 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
-        //αθροιζω το neighbours tou state_1 στα 3 πανω κελια( του state_1) απο το κελι που βρισκομαι στο state
+        //Add new neighbours for 3 up-stairs cells (new_state) from the state
         cell_n->x = cell->x - 1;
         cell_n->y = cell->y - 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        ;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh+ 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
         cell_n->x = cell->x - 1;
         cell_n->y = cell->y + 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
         cell_n->x = cell->x - 1;
         cell_n->y = cell->y;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
-        //αθροιζω το neighbours tou state_1 στα 3 κατω κελια( του state_1) απο το κελι που βρισκομαι στο state
+        //Add new neighbours for 3 down-stairs cells (new_state) from the state
         cell_n->x = cell->x + 1;
         cell_n->y = cell->y - 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
         cell_n->x = cell->x + 1;
         cell_n->y = cell->y + 1;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
 
         cell_n->x = cell->x + 1;
         cell_n->y = cell->y;
-        neighbours = *(int *)map_find(state_1->map, cell_n);
-        neighbours++;
-        map_insert(state_1->map, create_lifecell(cell_n), create_int(neighbours));
+        pointer = map_find(state_neighbours->map, cell_n);
+        if(pointer!=NULL)
+        {
+            int neigh = *(int*)pointer;
+            neighbours = neigh + 1;
+        }
+        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
     }
 
-    //θα φτιαξω νεο map και θα διαγραψω το παλιο map
+    //Create a new map
     LifeState state_new;
     state_new = life_create();
     char life = 'o';
@@ -547,7 +588,7 @@ LifeState life_evolve(LifeState state)
         {
             cell_new->x = i;
             cell_new->y = j;
-            neighbours = *(int *)map_find(state_1->map, cell_new);
+            neighbours = *(int *)map_find(state_neighbours->map, cell_new);
             if ((neighbours == 3 || neighbours == 2) && (map_find(state->map, cell_new) != NULL))
             {
                 if (cell_new->x < state_new->mincell->x)
@@ -586,21 +627,19 @@ LifeState life_evolve(LifeState state)
                 {
                     state_new->maxcell->y = cell_new->y;
                 }
-                //  printf("%d kxcddedeai %d\n",cell->x,cell->y);
                 map_insert(state_new->map, create_lifecell(cell_new), create_char(life));
             }
         }
     }
 
-    // printf("i=%d j= %d kaiiii ima=%d jma=%d\n",state_new->mincell->x,state_new->mincell->y,state_new->maxcell->x,state_new->maxcell->y);
     life_destroy(state);
-    life_destroy(state_1);
+    life_destroy(state_neighbours);
     free(cell_n);
     //free(cell);
     //free(cell_new);
     return state_new;
 }
-
+// Life Destroy
 void life_destroy(LifeState state)
 {
     map_destroy(state->map);
@@ -609,9 +648,9 @@ void life_destroy(LifeState state)
     free(state);
 }
 
-// Επιστρέφει μία λίστα από το πολύ steps εξελίξεις, ξεκινώνας από την κατάσταση
-// state. Αν βρεθεί επανάληψη τότε στο *loop αποθηκεύεται ο κόμβος στον οποίο
-// συνεχίζει η εξέλιξη μετά τον τελευταίο κόμβο της λίστας, διαφορετικά NULL
+// Returns a list of at most 'steps' evolutions, starting from the state 'state'.
+// If a repetition is found, the *loop stores the node where the evolution continues 
+// after the last node in the list, otherwise NULL.
 List life_evolve_many(LifeState state, int steps, ListNode *loop, char *file)
 {
     if (steps == 0)
@@ -620,6 +659,7 @@ List life_evolve_many(LifeState state, int steps, ListNode *loop, char *file)
         return NULL;
     }
     Map map = map_create(compare_state, free, free);
+    map_set_hash_function(map, hash_lifecell);
     int k = 1;
     List list = list_create(free);
     ListNode node;
@@ -630,12 +670,9 @@ List life_evolve_many(LifeState state, int steps, ListNode *loop, char *file)
     map_insert(map, create_state(state), create_int(k));
     for (int i = 0; i < steps; ++i)
     {
-
-        //printf(" στin evolve gia i = %d \n",i);
         state = life_evolve(state);
         if ((node_map = map_find_node(map, state)) != MAP_EOF)
         {
-            printf("brethike me i = %d kai map == %d\n", i, map_size(map)); //na diagrafthei
             *loop = list_find_node(list, state, compare_state);
             map_destroy(map);
             return list;
@@ -645,7 +682,6 @@ List life_evolve_many(LifeState state, int steps, ListNode *loop, char *file)
         list_insert_next(list, node, create_state(state));
         node = list_next(list, node);
     }
-    //printf("aionio\n");                                           //na dagrafthei
     map_destroy(map);
     return list;
 }
