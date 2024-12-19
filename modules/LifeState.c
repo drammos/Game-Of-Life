@@ -155,6 +155,18 @@ LifeState life_create_from_rle(char *file)
     int i = 0;
     int j = 0;
 
+    while (character == '#') {
+        char buf[1024];
+        fgets(buf, 1024, filename);
+        character = fgetc(filename);
+    }
+
+    if (character == 'x') {
+        char buf[1024];
+        fgets(buf, 1024, filename);
+        character = fgetc(filename);
+    }
+
     LifeCell cell = malloc(sizeof(struct lifecell));
     
     cell->x = 0;
@@ -207,8 +219,16 @@ LifeState life_create_from_rle(char *file)
         }
         else if (character == '$')
         {
-
-            i++;
+            if(m)
+            {
+                for(int k = 0; k < m; k++){
+                    i++;
+                }
+            }
+            else{
+                i++;
+            }
+            m = 0;
             j = 0;
         }
         else if (character == '!')
@@ -639,6 +659,7 @@ LifeState life_evolve(LifeState state)
     //free(cell_new);
     return state_new;
 }
+
 // Life Destroy
 void life_destroy(LifeState state)
 {
