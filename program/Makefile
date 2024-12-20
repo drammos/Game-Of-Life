@@ -2,7 +2,7 @@
 MODULES = ../modules
 INCLUDE = ../include
 LIB = ../lib
-FILES = ../Input
+FILES = ../files
 
 # Compile options. Το -I<dir> λέει στον compiler να αναζητήσει εκεί include files
 CFLAGS = -Wall -no-pie -fPIE -g -I$(INCLUDE)
@@ -15,7 +15,7 @@ OBJS = lifegame.o $(MODULES)/LifeState.o $(MODULES)/ADTVector.o $(MODULES)/ADTMa
 EXEC = lifegame
 
 # parameters
-ARGS = ../files/gospergundestroyedbygliders.rle 0 0 200 200 500 1 1 1 output.gif
+ARGS = $(FILES)/gospergundestroyedbygliders.rle 0 0 200 200 500 1 1 1 output.gif
 
 # το ίδιο για το libbmp.a
 $(LIB)/libbmp.a:
