@@ -15,7 +15,7 @@ OBJS = lifegame.o $(MODULES)/LifeState.o $(MODULES)/ADTVector.o $(MODULES)/ADTMa
 EXEC = lifegame
 
 # parameters
-ARGS = test.rle 0 0 200 200 500 1 1 10 output.gif
+ARGS = ../files/gospergundestroyedbygliders.rle 0 0 200 200 500 1 1 1 output.gif
 
 # το ίδιο για το libbmp.a
 $(LIB)/libbmp.a:
