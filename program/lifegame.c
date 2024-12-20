@@ -21,27 +21,27 @@ int main(int argc, char *argv[]) {
         state = life_create_from_rle(argv[1]);
         // <state> <top> <left> <bottom> <right> <frames> <zoom> <speed> <delay> <gif>  //pros diagrafi
 
-        //οι διαστασεις του gif
+        //Top, Left, Bottom and Right for gif
         int top = atoi( argv[2]);
         int left = atoi( argv[3]);
         int bottom = atoi( argv[4]);
         int right = atoi( argv[5]);
 
-        //τα πλαισια και αλματα αναμεσα σε εξελιξεις
+        //Frames and speed
         unsigned int frames = atoi( argv[6]);
         unsigned int speed = atoi( argv[8]);
 
-        //το ζουμ για τα κελια
+        //Zoom for Cells
         float zoom = atof( argv[7]);
         float cellsize=0;
         if(zoom > 1){
                 cellsize = zoom;
         }
 
-        //ο χρόνος που διαρκεί κάθε frame (msecs).
+        //The time for every frame
         int delay = atoi( argv[9]);
         
-        //οι εξελιξεις που θα γινουν ειναι steps
+        //Steps after from initialize .rle
         unsigned int steps;
         steps = frames*speed; 
         
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         ListNode node = list_first( list_state);
 
 
-        //ελενχω ωστε να φτιαξω το size kai size_m για τισ διαστασεις του GIF και Bitmap
+        //Create size and size+m for GIF and Bitmap
         int size;
         int size_m;
 
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
         int i_dis = abs(top-bottom)/4;
         int j_dis = abs(right-left)/4;
 
-        // Δημιουργία ενός GIF και ενός bitmap στη μνήμη
+        // Create Gif and Bitmap
 	GIF* gif = gif_create( size*zoom, size_m*zoom);
 	Bitmap* bitmap = bm_create( size*zoom, size_m*zoom);
 
-	// Default καθυστέρηση μεταξύ των frames, σε εκατοστά του δευτερολέπτου
+	// Default delay between frames
 	gif->default_delay = delay;
 
         LifeCell cell;
@@ -89,16 +89,17 @@ int main(int argc, char *argv[]) {
         developments = 1;
         int k = 1;
 
-	// Δημιουργούμε ενα animation με ένα "cell" το οποίο μετακινείται από τη δεξιά-πάνω
-	// γωνία προς την κάτω-αριστερά. Το cell μετακινείται ένα pixel τη φορά, οπότε το animation
-	// θα έχει τόσα frames όσα το μέθεθος της εικόνας.
+	// We create an animation with a "cell" that moves from the top-right corner
+        // to the bottom-left corner. The cell moves one pixel at a time, so the animation
+        // will have as many frames as the dimensions of the image.
         while( developments <= steps) {
+                // In the start, set black for all cells
 		if(k == 1){
-                        // Σε κάθε frame, πρώτα μαυρίζουμε ολόκληρο το bitmap
 		        bm_set_color(bitmap, bm_atoi("black"));
 		        bm_clear(bitmap);
                 }
-        	// Και μετά ζωγραφίζουμε ασπρα τα τετραγωνα οπου ειναι ζωντανα       
+
+        	// Now, set white for living cells
 	        bm_set_color(bitmap, bm_atoi("white"));
                 k = 0;
                 for(MapNode node_map = map_first( state_new->map);
@@ -127,20 +128,20 @@ int main(int argc, char *argv[]) {
                                 y = y + j_dis;
                                 bm_fillrect(bitmap, x, y, x + cellsize , y + cellsize);
                         }
-                        //bm_fillrect(bitmap, x, y,x+1 , y+1);
-                        // bm_putpixel( bitmap, x,y);
                 }
                 
                 counter = counter + speed;
                 do{             
                         if(loop == NULL){
-                                state_new =  life_evolve( state_new);
+                                LifeState state_new_1 =  life_evolve( state_new);
+                                // life_destroy(state_new);
+                                state_new = state_new_1;
                         }
                         else{
                                 state_new = list_node_value( list_state, node);
                                 node = list_next( list_state, node);
                                 if(node == LIST_EOF){
-                                node = loop;
+                                        node = loop;
                                 }
                         }
 
@@ -148,8 +149,8 @@ int main(int argc, char *argv[]) {
                 
                 }while( ( developments < counter) && (developments<=steps));
                 
-                // Τέλος προσθέτουμε το bitmap σαν frame στο GIF (τα περιεχόμενα αντιγράφονται)
-	       if(k == 1)gif_add_frame(gif, bitmap);
+	       // In the end, we add the bitmap as frame at GIF
+               if(k == 1)gif_add_frame(gif, bitmap);
                else if(developments>steps)gif_add_frame(gif,bitmap);
         }
 
@@ -159,5 +160,4 @@ int main(int argc, char *argv[]) {
 	// free memory
 	bm_free(bitmap);
 	gif_free(gif);
-        //free(gif_for_save);
 }
