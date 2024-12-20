@@ -2,13 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <limits.h>
 
 #include "LifeState.h"
 #include "ADTMap.h"
 #include <stdint.h>
 #include "bmp.h"
 #include "gif.h"
-
 
 //With Create Fuction, I reserve space
 
@@ -50,10 +52,6 @@ LifeState create_state(LifeState state)
         cell = map_node_key(state->map, node);
         map_insert(state_new->map, create_lifecell(cell), create_char(life));
     }
-    state_new->mincell->x = state->mincell->x;
-    state_new->mincell->y = state->mincell->y;
-    state_new->maxcell->x = state->maxcell->x;
-    state_new->maxcell->y = state->maxcell->y;
     return state_new;
 }
 
@@ -132,8 +130,7 @@ LifeState life_create()
     state = malloc(sizeof(struct lifestate));
     state->map = map_create(compare_lifecell, free, free);
     map_set_hash_function(state->map, hash_lifecell);
-    state->mincell = malloc(sizeof(struct lifecell));
-    state->maxcell = malloc(sizeof(struct lifecell));
+    
     return state;
 }
 
@@ -171,45 +168,27 @@ LifeState life_create_from_rle(char *file)
     
     cell->x = 0;
     cell->y = 0;
-    state->mincell = create_lifecell(cell);
-    state->maxcell = cell;
 
     //reade the file
     //i save the file in a map, where the map have the cell where is 'o'
     char life = 'o';
     while (character != EOF)
-    {
-        if (character == 'b')
-        {
-            if (m)
-            {
-                for (int k = 0; k < m; ++k)
-                {
-                    j++;
-                }
-            }
-            else
-            {
-                j++;
-            }
-            m = 0;
+    {   
+        if(character == ' ' || character == '\n' || character == '\t') {
             character = fgetc(filename);
             continue;
         }
-        if (character == 'o')
+        if (character == 'b')
         {
-            if (m)
-            {
-                cell->x = i;
-                for (int f = 0; f < m; ++f)
-                {
-                    cell->y = j;
-                    map_insert(state->map, create_lifecell(cell), create_char(life));
-                    j++;
-                }
-            }
-            else
-            {
+            m = (m == 0) ? 1 : m;
+            j += m;
+            m = 0;
+            
+        }
+        else if (character == 'o')
+        {
+            m = (m == 0) ? 1 : m;
+            for (int f = 0; f < m; f++) {
                 cell->x = i;
                 cell->y = j;
                 map_insert(state->map, create_lifecell(cell), create_char(life));
@@ -219,39 +198,18 @@ LifeState life_create_from_rle(char *file)
         }
         else if (character == '$')
         {
-            if(m)
-            {
-                for(int k = 0; k < m; k++){
-                    i++;
-                }
-            }
-            else{
-                i++;
-            }
-            m = 0;
+            m = (m == 0) ? 1 : m;
+            i += m;
             j = 0;
+            m = 0;
         }
         else if (character == '!')
         {
-            cell->x = i;
-            cell->y = j - 1;
-            state->maxcell = create_lifecell(cell);
             break;
         }
-        else
-        {
-            char *f = malloc(sizeof(char));
-            sprintf(f, "%c", character);
-            int k = atoi(f);
-            if (m)
-            {
-                m = m * 10;
-                m = m + k;
-            }
-            else
-            {
-                m = k;
-            }
+        else if (isdigit(character)) 
+        {    
+            m = m * 10 + (character - '0');
         }
         character = fgetc(filename);
     }
@@ -268,9 +226,21 @@ void life_save_to_rle(LifeState state, char *file)
 
 
     //i have save from input-file from the "table" max and min cell
-    int min_j = state->mincell->y;
-    int min_i = state->mincell->x;
-    int max_j = state->maxcell->y;
+    int min_i = INT_MIN;
+    int min_j = INT_MIN;
+    int max_i = INT_MAX;
+    int max_j = INT_MAX;
+
+    for (MapNode node = map_first(state->map);
+         node != MAP_EOF;
+         node = map_next(state->map, node)) {
+
+        LifeCell cell = map_node_key(state, node);
+        if (cell->x < min_i) min_i = cell->x;
+        if (cell->x > max_i) max_i = cell->x;
+        if (cell->y < min_j) min_j = cell->y;
+        if (cell->y > max_j) max_j = cell->y;
+    }
     
     //dead and life cell
     char ch_dead = 'b';
@@ -476,6 +446,24 @@ void life_set_cell(LifeState state, LifeCell cell, bool value)
     }
 }
 
+void calculate_neighbours(LifeState state_neighbours, int x, int y)
+{
+    LifeCell cell = malloc(sizeof(struct lifecell));
+    cell->x = x;
+    cell->y = y;
+
+    Pointer* pointer = map_find(state_neighbours->map, cell);
+    int neighbours = 0;
+    if(pointer!=NULL)
+    {
+        *pointer = *(int*)pointer + 1;
+        // neighbours = neigh + 1;
+    }
+    // map_insert(state_neighbours->map, create_lifecell(cell), create_int(neighbours));
+
+    free(cell);
+}
+// Life evolve
 LifeState life_evolve(LifeState state)
 {
     // I create a new state
@@ -483,170 +471,79 @@ LifeState life_evolve(LifeState state)
     // And the neighbours for Value
     LifeState state_neighbours;
     state_neighbours = life_create();
-    int min_i = state->mincell->x;
-    int min_j = state->mincell->y;
-    int max_i = state->maxcell->x;
-    int max_j = state->maxcell->y;
+    int min_i = INT_MAX;
+    int min_j = INT_MAX;
+    int max_i = INT_MIN;
+    int max_j = INT_MIN;
+
+    for (MapNode node = map_first(state->map);
+         node != MAP_EOF;
+         node = map_next(state->map, node)) {
+
+        LifeCell cell = map_node_key(state, node);
+        if (cell->x < min_i) min_i = cell->x;
+        if (cell->x > max_i) max_i = cell->x;
+        if (cell->y < min_j) min_j = cell->y;
+        if (cell->y > max_j) max_j = cell->y;
+    }
 
     int neighbours;
     neighbours = 0;
     LifeCell cell_n;
     cell_n = malloc(sizeof(struct lifecell));
-    for (int i = min_i - 1; i <= max_i + 1; ++i)
+    for (int i = min_i - 1; i <= max_i + 1; i++)
     {
-        for (int j = min_j - 1; j <= max_j + 1; ++j)
+        for (int j = min_j - 1; j <= max_j + 1; j++)
         {
             cell_n->x = i;
             cell_n->y = j;
             map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
         }
     }
-    LifeCell cell;
-    cell = malloc(sizeof(struct lifecell));
+
     for (MapNode node = map_first(state->map);
          node != MAP_EOF;
          node = map_next(state->map, node))
     {
-        //Add new neighbours for left&right cells (new_state) from the state
-        cell = map_node_key(state->map, node);
-        Pointer* pointer;
-        cell_n->x = cell->x;
-        cell_n->y = cell->y - 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
+        LifeCell cell = map_node_key(state->map, node);
 
-        cell_n->x = cell->x;
-        cell_n->y = cell->y + 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
+        //Add new neighbours for left&right cells (new_state) from the state
+        calculate_neighbours(state_neighbours, cell->x, cell->y - 1);
+        calculate_neighbours(state_neighbours, cell->x, cell->y + 1);
 
         //Add new neighbours for 3 up-stairs cells (new_state) from the state
-        cell_n->x = cell->x - 1;
-        cell_n->y = cell->y - 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh+ 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
-
-        cell_n->x = cell->x - 1;
-        cell_n->y = cell->y + 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
-
-        cell_n->x = cell->x - 1;
-        cell_n->y = cell->y;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
+        calculate_neighbours(state_neighbours, cell->x - 1, cell->y - 1);
+        calculate_neighbours(state_neighbours, cell->x - 1, cell->y + 1);
+        calculate_neighbours(state_neighbours, cell->x - 1, cell->y);
 
         //Add new neighbours for 3 down-stairs cells (new_state) from the state
-        cell_n->x = cell->x + 1;
-        cell_n->y = cell->y - 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
-
-        cell_n->x = cell->x + 1;
-        cell_n->y = cell->y + 1;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
-
-        cell_n->x = cell->x + 1;
-        cell_n->y = cell->y;
-        pointer = map_find(state_neighbours->map, cell_n);
-        if(pointer!=NULL)
-        {
-            int neigh = *(int*)pointer;
-            neighbours = neigh + 1;
-        }
-        map_insert(state_neighbours->map, create_lifecell(cell_n), create_int(neighbours));
+        calculate_neighbours(state_neighbours, cell->x + 1, cell->y - 1);
+        calculate_neighbours(state_neighbours, cell->x + 1, cell->y + 1);
+        calculate_neighbours(state_neighbours, cell->x + 1, cell->y);
     }
 
     //Create a new map
     LifeState state_new;
     state_new = life_create();
     char life = 'o';
-    state_new->mincell->x = max_i + 1;
-    state_new->mincell->y = max_j + 1;
-    state_new->maxcell->x = min_i - 1;
-    state_new->maxcell->y = min_j - 1;
     LifeCell cell_new = malloc(sizeof(struct lifecell));
-    for (int i = min_i - 1; i <= max_i + 1; ++i)
+    for (int i = min_i - 1; i <= max_i + 1; i++)
     {
-        for (int j = min_j - 1; j <= max_j + 1; ++j)
+        for (int j = min_j - 1; j <= max_j + 1; j++)
         {
             cell_new->x = i;
             cell_new->y = j;
-            neighbours = *(int *)map_find(state_neighbours->map, cell_new);
-            if ((neighbours == 3 || neighbours == 2) && (map_find(state->map, cell_new) != NULL))
-            {
-                if (cell_new->x < state_new->mincell->x)
-                {
-                    state_new->mincell->x = cell_new->x;
-                }
-                if (cell_new->x > state_new->maxcell->x)
-                {
-                    state_new->maxcell->x = cell_new->x;
-                }
-                if (cell_new->y < state_new->mincell->y)
-                {
-                    state_new->mincell->y = cell_new->y;
-                }
-                if (cell_new->y > state_new->maxcell->y)
-                {
-                    state_new->maxcell->y = cell_new->y;
-                }
-                map_insert(state_new->map, create_lifecell(cell_new), create_char(life));
-            }
+            Pointer* pointer = map_find(state_neighbours->map, cell_new);
+            if(pointer==NULL) continue;
+            neighbours = *(int*)pointer;
+
+            if((neighbours<2 || neighbours>3) && (map_find(state->map, cell_new)!=NULL)) continue;
             else if (neighbours == 3 && (map_find(state->map, cell_new) == NULL))
             {
-                if (cell_new->x < state_new->mincell->x)
-                {
-                    state_new->mincell->x = cell_new->x;
-                }
-                if (cell_new->x > state_new->maxcell->x)
-                {
-                    state_new->maxcell->x = cell_new->x;
-                }
-                if (cell_new->y < state_new->mincell->y)
-                {
-                    state_new->mincell->y = cell_new->y;
-                }
-                if (cell_new->y > state_new->maxcell->y)
-                {
-                    state_new->maxcell->y = cell_new->y;
-                }
+                map_insert(state_new->map, create_lifecell(cell_new), create_char(life));
+            }
+            else if(map_find(state->map, cell_new) != NULL)
+            {
                 map_insert(state_new->map, create_lifecell(cell_new), create_char(life));
             }
         }
@@ -655,8 +552,6 @@ LifeState life_evolve(LifeState state)
     life_destroy(state);
     life_destroy(state_neighbours);
     free(cell_n);
-    //free(cell);
-    //free(cell_new);
     return state_new;
 }
 
@@ -664,8 +559,6 @@ LifeState life_evolve(LifeState state)
 void life_destroy(LifeState state)
 {
     map_destroy(state->map);
-    free(state->mincell);
-    free(state->maxcell);
     free(state);
 }
 
