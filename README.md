@@ -1,5 +1,7 @@
 # Game of Life
 
+https://miro.medium.com/v2/resize:fit:640/format:webp/1*5BiX8kolye4QPyyexQrogA.gif
+
 Welcome to **Game of Life**, a Conway's Game of Life implementation created by **Dimitrios Rammos** as part of the **Data Structures** course in the **Department of Informatics and Telecommunications (DIT)** at the **University of Athens**. This project is developed in **C** and demonstrates advanced usage of data structures and algorithms.
 
 
