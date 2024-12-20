@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "lifestate.h": "c"
+        "lifestate.h": "c",
+        "type_traits": "c"
     }
 }
