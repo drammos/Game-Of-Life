@@ -2,15 +2,17 @@
 
 Welcome to **Game of Life**, a Conway's Game of Life implementation created by **Dimitrios Rammos** as part of the **Data Structures** course in the **Department of Informatics and Telecommunications (DIT)** at the **University of Athens**. This project is developed in **C** and demonstrates advanced usage of data structures and algorithms.
 
+
+If you want learn for Game-Of-Life read [here](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).</br>
+Check [here](https://conwaylife.com/wiki/Category:Patterns_found_by_(person)) for patterns.</br>
+The official page by [Conway's Game of Life](https://conwaylife.com/).</br>
+
+
 ---
 
 ## 📜 Introduction
 
 The **Game of Life** is a cellular automaton devised by the mathematician John Conway. It's a zero-player game, meaning its evolution is determined by its initial state without requiring further input. This implementation allows users to input patterns in the `.rle` format and outputs the evolution of the game as a GIF animation.
-
-If you want learn for Game-Of-Life read [here](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).</br>
-Check [here](https://conwaylife.com/wiki/Category:Patterns_found_by_(person)) for patterns.</br>
-The official page by [Conway's Game of Life](https://conwaylife.com/).</br>
 
 
 ---
