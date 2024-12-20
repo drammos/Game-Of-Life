@@ -17,8 +17,6 @@ typedef struct lifestate* LifeState;
 struct lifestate
 {
     Map map;
-    LifeCell mincell;
-    LifeCell maxcell;
 };
 
 LifeState create_state( LifeState);
