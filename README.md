@@ -8,9 +8,9 @@ Welcome to **Game of Life**, a Conway's Game of Life implementation created by *
 
 The **Game of Life** is a cellular automaton devised by the mathematician John Conway. It's a zero-player game, meaning its evolution is determined by its initial state without requiring further input. This implementation allows users to input patterns in the `.rle` format and outputs the evolution of the game as a GIF animation.
 
-If you want learn for Game-Of-Life read [here](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
-Check [here](https://conwaylife.com/wiki/Category:Patterns_found_by_(person)) for patterns.
-The official page by [Conway's Game of Life](https://conwaylife.com/).
+If you want learn for Game-Of-Life read [here](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).</br>
+Check [here](https://conwaylife.com/wiki/Category:Patterns_found_by_(person)) for patterns.</br>
+The official page by [Conway's Game of Life](https://conwaylife.com/).</br>
 
 
 ---
